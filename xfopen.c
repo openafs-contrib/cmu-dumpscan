@@ -40,6 +40,7 @@ extern afs_uint32 xfon_fd(XFILE *, int, char *);
 extern afs_uint32 xfon_voldump(XFILE *, int, char *);
 extern afs_uint32 xfon_profile(XFILE *, int, char *);
 extern afs_uint32 xfon_stdio(XFILE *, int);
+extern afs_uint32 xfon_gzip(XFILE *, int, char *);
 
 struct xftype {
   struct xftype *next;
@@ -71,6 +72,7 @@ static void register_default_types(void)
   xfregister("FD",      xfon_fd);
   xfregister("AFSDUMP", xfon_voldump);
   xfregister("PROFILE", xfon_profile);
+  xfregister("GZIP",    xfon_gzip);
   did_register_defaults = 1;
 }
 

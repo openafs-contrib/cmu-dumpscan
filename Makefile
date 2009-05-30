@@ -31,6 +31,7 @@ RANLIB     = ranlib
 # On Linux:
 ifeq ($(shell uname),Linux)
 R=-Wl,-rpath,
+LOCALPATH = /usr/local
 endif
 
 # On Solaris:
@@ -38,22 +39,31 @@ ifeq ($(shell uname),SunOS)
 R        = -R
 XLDFLAGS = -L/usr/ucblib -R/usr/ucblib
 XLIBS    = -lsocket -lnsl -lucb -lresolv
+LOCALPATH = /usr/local
+endif
+
+# NetBSD
+ifeq ($(shell uname),NetBSD)
+R	= -Wl,-rpath,
+XLIBS	= -lkrb5 -ldes
+LOCALPATH = /usr/pkg
+XCFLAGS = -I$(LOCALPATH)/include/afs
 endif
 
 DEBUG      = -g
-INCLUDES   = -I/usr/local/include
-CFLAGS     = $(DEBUG) $(INCLUDES)
-LDFLAGS    = -L. -L/usr/local/lib $(R)/usr/local/lib -L/usr/local/lib/afs $(XLDFLAGS)
+INCLUDES   = -I$(LOCALPATH)/include
+CFLAGS     = $(DEBUG) $(INCLUDES) $(XCFLAGS)
+LDFLAGS    = -L. -L$(LOCALPATH)/lib $(R)$(LOCALPATH)/lib -L$(LOCALPATH)/lib/afs $(XLDFLAGS)
 
 LIBS                 = -ldumpscan -lxfiles \
                        -lauth -laudit -lvolser -lvldb -lubik -lrxkad \
-                       /usr/local/lib/afs/libsys.a -lrx -llwp \
-                       /usr/local/lib/afs/util.a -lcom_err $(XLIBS)
+                       /$(LOCALPATH)/lib/afs/libsys.a -lrx -llwp \
+                       /$(LOCALPATH)/lib/afs/util.a -lcom_err -lz $(XLIBS)
 OBJS_afsdump_scan    = afsdump_scan.o repair.o
 OBJS_afsdump_xsed    = afsdump_xsed.o repair.o
 OBJS_libxfiles.a     = xfiles.o xfopen.o xf_errs.o xf_printf.o int64.o \
                        xf_files.o xf_rxcall.o xf_voldump.o \
-                       xf_profile.o xf_profile_name.o
+                       xf_profile.o xf_profile_name.o xf_gzip.o
 OBJS_libdumpscan.a   = primitive.o util.o dumpscan_errs.o parsetag.o \
                        parsedump.o parsevol.o parsevnode.o dump.o \
                        directory.o pathname.o backuphdr.o stagehdr.o
