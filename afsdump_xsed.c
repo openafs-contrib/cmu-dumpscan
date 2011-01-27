@@ -34,6 +34,11 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include <afs/stds.h>
+#include <afs/acl.h>
+#include <afs/prs_fs.h>
+#include <afs/com_err.h>
+
 extern int opterr, optind;
 extern char *optarg;
 
@@ -173,7 +178,7 @@ static afs_uint32 my_error_cb(afs_uint32 code, int fatal, void *ref, char *msg, 
   error_count++;
   if (!quiet) {
     va_start(alist, msg);
-    com_err_va(argv0, code, msg, alist);
+    afs_com_err_va(argv0, code, msg, alist);
     va_end(alist);
   }
 }
@@ -245,7 +250,7 @@ static afs_uint32 setup_repair(void)
 {
   afs_uint32 r;
 
-  r = xfopen(&repair_output, gendump_path, O_RDWR, 0644);
+  r = xfopen(&repair_output, O_RDWR, gendump_path);
   if (r) return r;
 
   dp.cb_dumphdr     = repair_dumphdr_cb;
@@ -261,16 +266,16 @@ static afs_uint32 setup_repair(void)
 /* Main program */
 void main(int argc, char **argv)
 {
-  XFILE *X;
+  XFILE *X, X_s;
   afs_uint32 r;
 
+  X = &X_s;
+
   parse_options(argc, argv);
-  initialize_UB_error_table();
-  initialize_UBsp_error_table();
   initialize_AVds_error_table();
-  r = xfopen(&X, input_path, O_RDONLY, 0);
+  r = xfopen(X, O_RDONLY, input_path);
   if (r) {
-    com_err(argv0, r, "opening %s", input_path);
+    afs_com_err(argv0, r, "opening %s", input_path);
     exit(2);
   }
 
@@ -288,7 +293,7 @@ void main(int argc, char **argv)
   }
 
   if (gendump_path && (r = setup_repair())) {
-    com_err(argv0, r, "setting up repair output");
+    afs_com_err(argv0, r, "setting up repair output");
     xfclose(X);
     exit(2);
   }
@@ -303,7 +308,7 @@ void main(int argc, char **argv)
     if ((r = xftell(X, &where))
     ||  (r = Path_PreScan(X, &phi, 0))
     ||  (r = xfseek(X, &where))) {
-      com_err(argv0, r, "- path initialization failed");
+      afs_com_err(argv0, r, "- path initialization failed");
       xfclose(X);
       exit(2);
     }
@@ -328,6 +333,6 @@ void main(int argc, char **argv)
   }
 
   if (verbose && error_count) fprintf(stderr, "*** %d errors\n", error_count);
-  if (r && !quiet) fprintf(stderr, "*** FAILED: %s\n", error_message(r));
+  if (r && !quiet) fprintf(stderr, "*** FAILED: %s\n", afs_error_message(r));
   exit(0);
 }

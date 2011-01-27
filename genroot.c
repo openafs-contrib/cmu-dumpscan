@@ -37,6 +37,7 @@
 #include <afs/dirpath.h>
 #include <afs/acl.h>
 #include <afs/prs_fs.h>
+#include <afs/com_err.h>
 
 
 struct rootitem {
@@ -131,7 +132,7 @@ static void parse_options(int argc, char **argv)
 
 static void die(const char *context, afs_uint32 code)
 {
-  fprintf(stderr, "%s: %s: %s", argv0, context, error_message(code));
+  fprintf(stderr, "%s: %s: %s", argv0, context, afs_error_message(code));
   exit(1);
 }
 

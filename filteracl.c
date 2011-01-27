@@ -1,7 +1,9 @@
 #include <sys/fcntl.h>
 #include <stdarg.h>
+#include <afs/stds.h>
 #include <afs/acl.h>
 #include <afs/prs_fs.h>
+#include <afs/com_err.h>
 #include "xfiles.h"
 #include "dumpscan.h"
 
@@ -100,7 +102,7 @@ static afs_uint32 error_cb(afs_uint32 err, int fatal, void *refcon,
 {
   va_list alist;
   va_start(alist, format);
-  com_err_va(progname, err, format, alist);
+  afs_com_err_va(progname, err, format, alist);
   va_end(alist);
 }
 
@@ -122,7 +124,7 @@ int main(int argc, char **argv)
     r = xfopen_FILE(&Xin, O_RDONLY, stdin);
   }
   if (r) {
-    com_err(progname, r, "opening %s", (argc > 1) ? argv[1] : "<stdin>");
+    afs_com_err(progname, r, "opening %s", (argc > 1) ? argv[1] : "<stdin>");
     exit(1);
   }
 
@@ -142,7 +144,7 @@ int main(int argc, char **argv)
 
   r = xfopen_FILE(&Xout, O_WRONLY, stdout);
   if (r) {
-    com_err(progname, r, "opening stdout");
+    afs_com_err(progname, r, "opening stdout");
     exit(1);
   }
 
@@ -151,6 +153,6 @@ int main(int argc, char **argv)
   if (!r) r = DumpDumpEnd(&Xout);
   if (!r) r = xfclose(&Xout);
   else        xfclose(&Xout);
-  if (r) fprintf(stderr, "*** FAILED: %s\n", error_message(r));
+  if (r) fprintf(stderr, "*** FAILED: %s\n", afs_error_message(r));
   exit(!!r);
 }
