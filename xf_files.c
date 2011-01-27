@@ -73,7 +73,11 @@ static afs_uint32 xf_FILE_do_tell(XFILE *X, u_int64 *offset)
     cp64(*offset, X->filepos);
     return 0;
   }
+#ifdef NATIVE_INT64
+  where = ftello(F);
+#else
   where = ftell(F);
+#endif
   if (where == -1) return errno;
   set64(*offset, where);
   return 0;
@@ -86,17 +90,30 @@ static afs_uint32 xf_FILE_do_seek(XFILE *X, u_int64 *offset)
   FILE *F = X->refcon;
   off_t where = get64(*offset);
 
+#ifdef NATIVE_INT64
+  if (fseeko(F, where, SEEK_SET) == -1) return errno;
+#else
+  if (hi64(*offset) != 0) return EOVERFLOW;
   if (fseek(F, where, SEEK_SET) == -1) return errno;
+#endif
+
   return 0;
 }
 
 
 /* do_skip for stdio xfiles */
-static afs_uint32 xf_FILE_do_skip(XFILE *X, afs_uint32 count)
+static afs_uint32 xf_FILE_do_skip(XFILE *X, u_int64 *count)
 {
   FILE *F = X->refcon;
+  off_t offset = get64(*count);
 
-  if (fseek(F, count, SEEK_CUR) == -1) return errno;
+#ifdef NATIVE_INT64
+  if (fseeko(F, offset, SEEK_CUR) == -1) return errno;
+#else
+  if (hi64(*count) != 0) return EOVERFLOW;
+  if (fseek(F, offset, SEEK_CUR) == -1) return errno;
+#endif
+
   return 0;
 }
 

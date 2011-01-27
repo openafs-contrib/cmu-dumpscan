@@ -176,6 +176,7 @@ typedef struct {
 #define F_VNODE_DATA          0x00001000 /* Set if size nonzero and data present */
 #define F_VNODE_PARTIAL       0x00002000 /* Partial vnode continuation (no header) */
 #define F_VNODE_LINK_TARGET   0x00004000 /* Symlink target present */
+#define F_VNODE_SIZE_HI       0x00008000 /* Set if high 32 bits of size are present */
 typedef struct {
   u_int64 offset;              /* Where in the input stream is it? */
   afs_uint32 field_mask;       /* What fields are present? */
@@ -191,7 +192,7 @@ typedef struct {
   afs_uint16 mode;             /* UNIX mode bits */
   afs_uint32 client_date;      /* Last modified date from client */
   afs_uint32 server_date;      /* Last modified date on server */
-  afs_uint32 size;             /* Size of data */
+  u_int64 size;                /* Size of data */
   u_int64 d_offset;            /* Where in the input stream is the data? */
   char *link_target;           /* Target of symbolic link */
   unsigned char acl[SIZEOF_LARGEDISKVNODE - SIZEOF_SMALLDISKVNODE];
@@ -310,7 +311,7 @@ typedef struct vhash_ent {
   afs_uint32 parent;            /* Parent VNode number */
   u_int64 v_offset;          /* Offset to start of vnode */
   u_int64 d_offset;          /* Offset to data (0 if none) */
-  afs_uint32 d_size;            /* Size of data */
+  u_int64 d_size;            /* Size of data */
 } vhash_ent;
 typedef struct {
   afs_uint32 n_vnodes;          /* Number of vnodes in volume */

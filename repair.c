@@ -216,6 +216,8 @@ afs_uint32 repair_volhdr_cb(afs_vol_header *hdr, XFILE *X, void *refcon)
 afs_uint32 repair_vnode_cb(afs_vnode *v, XFILE *X, void *refcon)
 {
   afs_uint32 r, field_mask = v->field_mask;
+  u_int64 zero64;
+  mk64(zero64, 0, 0);
 
   if ((v->vnode & 1) && !field_mask) {
     if (RV) fprintf(stderr, ">>> VNODE %d is directory but has no fields?\n");
@@ -284,10 +286,10 @@ afs_uint32 repair_vnode_cb(afs_vnode *v, XFILE *X, void *refcon)
   }
   if (field_mask && !(field_mask & F_VNODE_SIZE)) {
     if (RV) fprintf(stderr, ">>> VNODE %d has no data size (using 0)\n");
-    v->size = 0;
+    mk64(v->size, 0, 0);
     v->field_mask |= F_VNODE_SIZE;
   }
-  if ((field_mask & F_VNODE_DATA) && !v->size) {
+  if ((field_mask & F_VNODE_DATA) && eq64(v->size, zero64)) {
     if (RV)
       fprintf(stderr, ">>> VNODE %d has data, but size == 0 (ignoring)\n",
             v->vnode);
@@ -318,7 +320,7 @@ afs_uint32 repair_vnode_cb(afs_vnode *v, XFILE *X, void *refcon)
   r = DumpVNode(&repair_output, v);
   if (r) return r;
 
-  if (v->size) {
+  if (ne64(v->size, zero64)) {
     if (r = xfseek(X, &v->d_offset)) return r;
     r = CopyVNodeData(&repair_output, X, v->size);
   } else if (v->type == vDirectory) {

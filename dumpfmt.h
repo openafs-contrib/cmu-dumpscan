@@ -120,6 +120,7 @@
 #define VTAG_SERVER_DATE 's'
 #define VTAG_ACL         'A'
 #define VTAG_DATA        'f'
+#define VTAG_DATA_LARGE  'h'
 
 
 #define AFS_DIR_MAGIC    1234

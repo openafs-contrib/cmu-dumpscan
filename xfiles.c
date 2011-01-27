@@ -94,7 +94,8 @@ afs_uint32 xfskip(XFILE *X, afs_uint32 count)
 
   /* Use the skip method, if there is one */
   if (X->do_skip && !X->passthru) {
-    code = (X->do_skip)(X, count);
+    mk64(tmp64, 0, count);
+    code = (X->do_skip)(X, &tmp64);
     if (code) return code;
     add64_32(tmp64, X->filepos, count);
     cp64(X->filepos, tmp64);
@@ -121,6 +122,52 @@ afs_uint32 xfskip(XFILE *X, afs_uint32 count)
       n = (count > SKIP_SIZE) ? SKIP_SIZE : count;
       if (code = xfread(X, buf, n)) return code;
       count -= n;
+    }
+    return 0;
+  }
+}
+
+afs_uint32 xfskip64(XFILE *X, u_int64 *count)
+{
+  afs_uint32 code;
+  u_int64 tmp64;
+
+  /* Use the skip method, if there is one */
+  if (X->do_skip && !X->passthru) {
+    code = (X->do_skip)(X, count);
+    if (code) return code;
+    add64_64(tmp64, X->filepos, *count);
+    cp64(X->filepos, tmp64);
+    return 0;
+  }
+
+  /* Simulate using absolute seek, if available */
+  if (X->do_seek && !X->passthru) {
+    if (code = xftell(X, &tmp64)) return code;
+    add64_64(X->filepos, tmp64, *count);
+    cp64(tmp64, X->filepos);
+    return xfseek(X, &tmp64);
+  }
+
+  /* Do it the hard/slow way - read all the data to be skipped.
+   * This is done if no other method is available, or if we are
+   * supposed to be copying all the data to another XFILE
+   */
+  {
+    char buf[SKIP_SIZE];
+    afs_uint32 n;
+    u_int64 remaining, zero;
+
+    mk64(zero, 0, 0);
+    cp64(remaining, *count);
+
+    while (gt64(remaining, zero)) {
+      mk64(tmp64, 0, SKIP_SIZE);
+      if (gt64(remaining, tmp64)) n = SKIP_SIZE;
+      else n = get64(remaining);
+      if (code = xfread(X, buf, n)) return code;
+      sub64_32(tmp64, remaining, n);
+      cp64(remaining, tmp64);
     }
     return 0;
   }

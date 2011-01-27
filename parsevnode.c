@@ -47,21 +47,24 @@ static afs_uint32 parse_acl  (XFILE *, unsigned char *, tagged_field *, afs_uint
                            tag_parse_info *, void *, void *);
 static afs_uint32 parse_vdata(XFILE *, unsigned char *, tagged_field *, afs_uint32,
                            tag_parse_info *, void *, void *);
+static afs_uint32 parse_vdata_large(XFILE *, unsigned char *, tagged_field *, afs_uint32,
+                           tag_parse_info *, void *, void *);
 
 /** Field list for vnodes **/
 static tagged_field vnode_fields[] = {
-  { VTAG_TYPE,        DKIND_BYTE,    " VNode type:   ", store_vnode, 0, 0 },
-  { VTAG_NLINKS,      DKIND_INT16,   " Link count:   ", store_vnode, 0, 0 },
-  { VTAG_DVERS,       DKIND_INT32,   " Version:      ", store_vnode, 0, 0 },
-  { VTAG_CLIENT_DATE, DKIND_TIME,    " Client Date:  ", store_vnode, 0, 0 },
-  { VTAG_AUTHOR,      DKIND_INT32,   " Author:       ", store_vnode, 0, 0 },
-  { VTAG_OWNER,       DKIND_INT32,   " Owner:        ", store_vnode, 0, 0 },
-  { VTAG_GROUP,       DKIND_INT32,   " Group:        ", store_vnode, 0, 0 },
-  { VTAG_MODE,        DKIND_OCT16,   " UNIX mode:    ", store_vnode, 0, 0 },
-  { VTAG_PARENT,      DKIND_INT32,   " Parent:       ", store_vnode, 0, 0 },
-  { VTAG_SERVER_DATE, DKIND_TIME,    " Server Date:  ", store_vnode, 0, 0 },
-  { VTAG_ACL,         DKIND_SPECIAL, " xxxxxxxx ACL: ", parse_acl,   0, 0 },
-  { VTAG_DATA,        DKIND_SPECIAL, " Contents:     ", parse_vdata, 0, 0 },
+  { VTAG_TYPE,        DKIND_BYTE,    " VNode type:   ", store_vnode,       0, 0 },
+  { VTAG_NLINKS,      DKIND_INT16,   " Link count:   ", store_vnode,       0, 0 },
+  { VTAG_DVERS,       DKIND_INT32,   " Version:      ", store_vnode,       0, 0 },
+  { VTAG_CLIENT_DATE, DKIND_TIME,    " Client Date:  ", store_vnode,       0, 0 },
+  { VTAG_AUTHOR,      DKIND_INT32,   " Author:       ", store_vnode,       0, 0 },
+  { VTAG_OWNER,       DKIND_INT32,   " Owner:        ", store_vnode,       0, 0 },
+  { VTAG_GROUP,       DKIND_INT32,   " Group:        ", store_vnode,       0, 0 },
+  { VTAG_MODE,        DKIND_OCT16,   " UNIX mode:    ", store_vnode,       0, 0 },
+  { VTAG_PARENT,      DKIND_INT32,   " Parent:       ", store_vnode,       0, 0 },
+  { VTAG_SERVER_DATE, DKIND_TIME,    " Server Date:  ", store_vnode,       0, 0 },
+  { VTAG_ACL,         DKIND_SPECIAL, " xxxxxxxx ACL: ", parse_acl,         0, 0 },
+  { VTAG_DATA,        DKIND_SPECIAL, " Contents:     ", parse_vdata,       0, 0 },
+  { VTAG_DATA_LARGE,  DKIND_SPECIAL, " Contents:     ", parse_vdata_large, 0, 0 },
   { 0,0,0,0,0,0 }};
 
 
@@ -381,25 +384,32 @@ static afs_uint32 parse_vdata(XFILE *X, unsigned char *tag, tagged_field *field,
   afs_uint32 (*cb)(afs_vnode *, XFILE *, void *);
   afs_vnode *v = (afs_vnode *)l_refcon;
   afs_uint32 r;
+  afs_uint32 tmp32;
+  u_int64 tmp64;
   int used = 0;
 
-  if (r = ReadInt32(X, &v->size)) return r;
+  if (r = ReadInt32(X, &tmp32)) return r;
   v->field_mask |= F_VNODE_SIZE;
 
-  if (v->size) {
+  add64_32(tmp64, v->size, tmp32);
+  cp64(v->size, tmp64);
+
+  mk64(tmp64, 0, 0);
+  if (ne64(v->size, tmp64)) {
     v->field_mask |= F_VNODE_DATA;
     if (r = xftell(X, &v->d_offset)) return r;
     if (p->print_flags & DSPRINT_VNODE)
-      printf("%s%d (0x%08x) bytes at %s (0x%s)\n", field->label,
-             v->size, v->size, decimate_int64(&v->d_offset, 0),
-             hexify_int64(&v->d_offset, 0));
+      printf("%s%s (0x%s) ", field->label,
+             decimate_int64(&v->size, 0), hexify_int64(&v->size, 0));
+      printf("bytes at %s (0x%s)\n",
+             decimate_int64(&v->d_offset, 0), hexify_int64(&v->d_offset, 0));
     
     switch (v->type) {
       case vSymlink:
-        v->link_target = (char *)malloc(v->size + 1);
+        v->link_target = (char *)malloc(get64(v->size) + 1);
         if (v->link_target) {
-          if (r = xfread(X, v->link_target, v->size)) return r;
-          v->link_target[v->size] = 0;
+          if (r = xfread(X, v->link_target, get64(v->size))) return r;
+          v->link_target[get64(v->size)] = 0;
           v->field_mask |= F_VNODE_LINK_TARGET;
           used++;
           if (p->print_flags & DSPRINT_VNODE)
@@ -414,7 +424,7 @@ static afs_uint32 parse_vdata(XFILE *X, unsigned char *tag, tagged_field *field,
 
       case vDirectory:
         if (p->cb_dirent || (p->print_flags & DSPRINT_DIR)) {
-          if (r = parse_directory(X, p, v, v->size, 0)) return r;
+          if (r = parse_directory(X, p, v, get64(v->size), 0)) return r;
           used++;
         }
         break;
@@ -440,7 +450,7 @@ static afs_uint32 parse_vdata(XFILE *X, unsigned char *tag, tagged_field *field,
   }
 
   if (!used) {
-    if ((r = xfskip(X, v->size))) return r;
+    if ((r = xfskip64(X, &v->size))) return r;
   }
 
   if (p->repair_flags & DSFIX_VDSYNC) {
@@ -448,4 +458,22 @@ static afs_uint32 parse_vdata(XFILE *X, unsigned char *tag, tagged_field *field,
     if (r) return r;
   }
   return ReadByte(X, tag);
+}
+
+/* Parse or skip over the vnode data for a "large" vnode (a vnode over 4G) */
+static afs_uint32 parse_vdata_large(XFILE *X, unsigned char *tag,
+                                 tagged_field *field, afs_uint32 value,
+                                 tag_parse_info *pi, void *g_refcon,
+                                 void *l_refcon)
+{
+  afs_vnode *v = (afs_vnode *)l_refcon;
+  afs_uint32 r;
+  afs_uint32 tmp32;
+
+  if (r = ReadInt32(X, &tmp32)) return r;
+  v->field_mask |= F_VNODE_SIZE_HI;
+
+  mk64(v->size, tmp32, 0);
+
+  return parse_vdata(X, tag, field, value, pi, g_refcon, l_refcon);
 }

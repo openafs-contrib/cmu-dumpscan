@@ -257,16 +257,20 @@ static int usevnode(XFILE *X, afs_uint32 vnum, char *vnodepath)
 }
 
 
-static int copyfile(XFILE *in, XFILE *out, int size)
+static int copyfile(XFILE *in, XFILE *out, u_int64 size)
 {
   static char buf[COPYBUFSIZE];
   int nr, nw, r;
+  u_int64 zero64, bufsize64, tmp64;
+  mk64(zero64, 0, 0);
+  mk64(bufsize64, 0, COPYBUFSIZE);
 
-  while (size) {
-    nr = (size > COPYBUFSIZE) ? COPYBUFSIZE : size;
+  while (ne64(size, zero64)) {
+    nr = (gt64(size, bufsize64)) ? COPYBUFSIZE : get64(size);
     if (r = xfread(in, buf, nr)) return r;
     if (r = xfwrite(out, buf, nr)) return r;
-    size -= nr;
+    sub64_32(tmp64, size, nr);
+    cp64(size, tmp64);
   }
   return 0;
 }
@@ -433,19 +437,19 @@ static afs_uint32 symlink_cb(afs_vnode *v, XFILE *X, void *refcon)
     vnodepath = vnpx;
   }
 
-  if (!(linktarget = (char *)malloc(v->size + 1))) {
+  if (!(linktarget = (char *)malloc(get64(v->size) + 1))) {
     if (!use_vnum && use != 2) free(vnodepath);
     return DSERR_MEM;
   }
   if ((r = xftell(X, &where))
   ||  (r = xfseek(X, &v->d_offset))
-  ||  (r = xfread(X, linktarget, v->size))) {
+  ||  (r = xfread(X, linktarget, get64(v->size)))) {
     if (!use_vnum && use != 2) free(vnodepath);
     free(linktarget);
     return r;
   }
   xfseek(X, &where);
-  linktarget[v->size] = 0;
+  linktarget[get64(v->size)] = 0;
 
   /* Print it out */
   if (verbose)

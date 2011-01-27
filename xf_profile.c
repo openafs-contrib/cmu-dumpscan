@@ -97,13 +97,13 @@ static afs_uint32 xf_PROFILE_do_seek(XFILE *X, u_int64 *offset)
 
 
 /* do_skip for profiled xfiles */
-static afs_uint32 xf_PROFILE_do_skip(XFILE *X, afs_uint32 count)
+static afs_uint32 xf_PROFILE_do_skip(XFILE *X, u_int64 *count)
 {
   PFILE *PF = X->refcon;
   afs_uint32 err;
 
-  err = xfskip(PF->content, count);
-  xfprintf(PF->profile, "SKIP %ld =%ld\n", (long)count, (long)err);
+  err = xfskip64(PF->content, count);
+  xfprintf(PF->profile, "SKIP %s =%ld\n", decimate_int64(count, 0), (long)err);
   return err;
 }
 
