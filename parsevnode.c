@@ -398,11 +398,12 @@ static afs_uint32 parse_vdata(XFILE *X, unsigned char *tag, tagged_field *field,
   if (ne64(v->size, tmp64)) {
     v->field_mask |= F_VNODE_DATA;
     if (r = xftell(X, &v->d_offset)) return r;
-    if (p->print_flags & DSPRINT_VNODE)
+    if (p->print_flags & DSPRINT_VNODE) {
       printf("%s%s (0x%s) ", field->label,
              decimate_int64(&v->size, 0), hexify_int64(&v->size, 0));
       printf("bytes at %s (0x%s)\n",
              decimate_int64(&v->d_offset, 0), hexify_int64(&v->d_offset, 0));
+    }
     
     switch (v->type) {
       case vSymlink:
