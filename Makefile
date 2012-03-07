@@ -43,7 +43,7 @@ endif
 
 DEBUG      = -g
 INCLUDES   = -I/usr/local/include
-CFLAGS     = $(DEBUG) $(INCLUDES)
+CFLAGS     = $(DEBUG) $(INCLUDES) -DNATIVE_INT64='long long'
 LDFLAGS    = -L. -L/usr/local/lib $(R)/usr/local/lib -L/usr/local/lib/afs $(XLDFLAGS)
 
 LIBS                 = -ldumpscan -lxfiles \
