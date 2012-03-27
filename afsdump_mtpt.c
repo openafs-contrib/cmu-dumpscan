@@ -196,7 +196,7 @@ filter_vnode(afs_vnode *v, void *refcon)
                                (unsigned)v->size);
     return 0;
   }
-  if (strncmp(v->link_target, mtpt_src, mtpt_src_size) != 0) {
+  if (strncmp(&v->link_target[1], &mtpt_src[1], mtpt_src_size-1) != 0) {
     if (debug) fprintf(stderr, "** mtpt symlink does not match filter src, %u.%u"
                                " target %s\n", (unsigned)v->vnode,
                                (unsigned)v->vuniq, v->link_target);
