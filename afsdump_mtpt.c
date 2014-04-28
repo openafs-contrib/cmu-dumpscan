@@ -242,7 +242,7 @@ static afs_uint32 vnode_cb(afs_vnode *v, XFILE *Xin, void *refcon)
   if (v->field_mask & F_VNODE_LINK_TARGET) {
     if (debug) fprintf(stderr, "   writing symlink target '%s' (%d bytes)\n",
                        v->link_target, v->size);
-    r = DumpVNodeData(Xout, v->link_target, v->size);
+    r = DumpVNodeData(Xout, v->link_target, &v->size);
     if (r && debug) fprintf(stderr, "   error %d writing link target\n", r);
     if (r) return r;
   }
@@ -265,7 +265,7 @@ static afs_uint32 data_cb(afs_vnode *v, XFILE *Xin, void *refcon)
 
   if (v->field_mask & F_VNODE_SIZE) {
     if (debug) fprintf(stderr, "   copying %d bytes of data\n", v->size);
-    r = CopyVNodeData(Xout, Xin, v->size);
+    r = CopyVNodeData(Xout, Xin, &v->size);
     if (r && debug) fprintf(stderr, "   error %d copying vnode data\n", r);
     if (r) return r;
   } else {

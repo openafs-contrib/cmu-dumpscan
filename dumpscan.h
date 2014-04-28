@@ -376,8 +376,8 @@ extern afs_uint32 Dir_Free(dir_state *ds);
 extern afs_uint32 DumpDumpHeader(XFILE *, afs_dump_header *);
 extern afs_uint32 DumpVolumeHeader(XFILE *, afs_vol_header *);
 extern afs_uint32 DumpVNode(XFILE *, afs_vnode *);
-extern afs_uint32 DumpVNodeData(XFILE *, char *, afs_uint32);
-extern afs_uint32 CopyVNodeData(XFILE *, XFILE *, afs_uint32);
+extern afs_uint32 DumpVNodeData(XFILE *, char *, u_int64 *);
+extern afs_uint32 CopyVNodeData(XFILE *, XFILE *, u_int64 *);
 
 /* pathname.c - Follow and construct pathnames */
 extern afs_uint32 Path_PreScan(XFILE *, path_hashinfo *, int);

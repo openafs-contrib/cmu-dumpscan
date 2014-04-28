@@ -198,7 +198,7 @@ afs_uint32 DumpVNode(XFILE *OX, afs_vnode *v)
 }
 
 
-afs_uint32 DumpVNodeData(XFILE *OX, char *buf, afs_uint32 size)
+static afs_uint32 DumpVNodeData32(XFILE *OX, char *buf, afs_uint32 size)
 {
   afs_uint32 r;
 
@@ -207,8 +207,49 @@ afs_uint32 DumpVNodeData(XFILE *OX, char *buf, afs_uint32 size)
   return 0;
 }
 
+static afs_uint32 DumpVNodeData64(XFILE *OX, char *buf, u_int64 *size)
+{
+  afs_uint32 r;
+  u_int64 remaining;
+  u_int64 zero;
 
-afs_uint32 CopyVNodeData(XFILE *OX, XFILE *X, afs_uint32 size)
+  if (r = WriteTagInt32Pair(OX, VTAG_DATA_LARGE, hi64(*size), lo64(*size))) return r;
+
+  mk64(zero, 0, 0);
+  cp64(remaining, *size);
+
+  /* Write the actual file contents in 2^32-1-sized chunks, so xfwrite can
+   * handle the writes. */
+  while (gt64(remaining, zero)) {
+    u_int64 tmp64;
+    afs_uint32 n;
+
+    mk64(tmp64, 0, 0xffffffff);
+
+    if (lt64(remaining, tmp64)) cp64(tmp64, remaining);
+
+    n = lo64(tmp64);
+
+    if (r = xfwrite(OX, buf, n)) return r;
+
+    sub64_32(tmp64, remaining, n);
+    cp64(remaining, tmp64);
+    buf = &buf[n];
+  }
+
+  return 0;
+}
+
+afs_uint32 DumpVNodeData(XFILE *OX, char *buf, u_int64 *size)
+{
+  if (hi64(*size) != 0) {
+    return DumpVNodeData64(OX, buf, size);
+  } else {
+    return DumpVNodeData32(OX, buf, lo64(*size));
+  }
+}
+
+static afs_uint32 CopyVNodeData32(XFILE *OX, XFILE *X, afs_uint32 size)
 {
   afs_uint32 r, n;
   static char buf[COPYBUFSIZE];
@@ -223,6 +264,44 @@ afs_uint32 CopyVNodeData(XFILE *OX, XFILE *X, afs_uint32 size)
   return 0;
 }
 
+static afs_uint32 CopyVNodeData64(XFILE *OX, XFILE *X, u_int64 *size)
+{
+  afs_uint32 r, n;
+  u_int64 zero;
+  u_int64 remaining;
+  static char buf[COPYBUFSIZE];
+
+  if (r = WriteTagInt32Pair(OX, VTAG_DATA_LARGE, hi64(*size), lo64(*size))) return r;
+
+  mk64(zero, 0, 0);
+  cp64(remaining, *size);
+
+  while (gt64(remaining, zero)) {
+    u_int64 tmp64;
+    mk64(tmp64, 0, COPYBUFSIZE);
+
+    if (lt64(remaining, tmp64)) cp64(tmp64, remaining);
+
+    n = lo64(tmp64);
+
+    if (r = xfread(X, buf, n)) return r;
+    if (r = xfwrite(OX, buf, n)) return r;
+
+    sub64_32(tmp64, remaining, n);
+    cp64(remaining, tmp64);
+  }
+
+  return 0;
+}
+
+afs_uint32 CopyVNodeData(XFILE *OX, XFILE *X, u_int64 *size)
+{
+  if (hi64(*size) != 0) {
+    return CopyVNodeData64(OX, X, size);
+  } else {
+    return CopyVNodeData32(OX, X, lo64(*size));
+  }
+}
 
 afs_uint32 DumpDumpEnd(XFILE *OX) {
   afs_uint32 r;

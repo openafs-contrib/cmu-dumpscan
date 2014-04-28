@@ -322,11 +322,12 @@ afs_uint32 repair_vnode_cb(afs_vnode *v, XFILE *X, void *refcon)
 
   if (ne64(v->size, zero64)) {
     if (r = xfseek(X, &v->d_offset)) return r;
-    r = CopyVNodeData(&repair_output, X, v->size);
+    r = CopyVNodeData(&repair_output, X, &v->size);
   } else if (v->type == vDirectory) {
     afs_dir_page page;
     struct DirHeader *dhp = (struct DirHeader *)&page;
     int i;
+    u_int64 tmp64;
 
     if (RV) {
       fprintf(stderr, ">>> VNODE %d is directory but has no contents\n");
@@ -358,10 +359,11 @@ afs_uint32 repair_vnode_cb(afs_vnode *v, XFILE *X, void *refcon)
     strcpy(page.entry[DHE + 2].name, "..");
     dhp->hashTable[0x44] = DHE + 2;
 
-    r = DumpVNodeData(&repair_output, (char *)&page, 2048);
+    mk64(tmp64, 0, 2048);
+    r = DumpVNodeData(&repair_output, (char *)&page, &tmp64);
   } else if (field_mask) {
     /* We wrote out attributes, so we should also write the 0-length data */
-    r = DumpVNodeData(&repair_output, "", 0);
+    r = DumpVNodeData(&repair_output, "", &zero64);
   }
 
   return r;

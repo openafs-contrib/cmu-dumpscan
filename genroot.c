@@ -321,6 +321,8 @@ void emit(void)
   if ((r = Dir_EmitData(DS, &X, 1))) die("root contents", r);
 
   for (item = root_head; item; item = item->next) {
+    u_int64 tmp64;
+
     memset(&vnode, 0, sizeof(vnode));
     vnode.field_mask  = F_VNODE_TYPE   | F_VNODE_NLINKS
                       | F_VNODE_PARENT | F_VNODE_DVERS
@@ -337,7 +339,9 @@ void emit(void)
     vnode.client_date = when;
     vnode.server_date = when;
     if ((r = DumpVNode(&X, &vnode))) die("vnode info", r);
-    if ((r = DumpVNodeData(&X, item->target, strlen(item->target))))
+
+    mk64(tmp64, 0, strlen(item->target));
+    if ((r = DumpVNodeData(&X, item->target, &tmp64)))
       die("vnode contents", r);
   }
   if ((r = DumpDumpEnd(&X))) die("dump end", r);
