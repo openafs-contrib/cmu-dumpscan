@@ -378,5 +378,5 @@ int main(int argc, char **argv)
   if (doaliases) parse_aliases();
   if (r = Dir_Finalize(DS)) die("finalize", r);
   emit();
-  exit(0);
+  return 0; /* success */
 }

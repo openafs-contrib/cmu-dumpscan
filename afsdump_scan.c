@@ -230,6 +230,7 @@ int main(int argc, char **argv)
 {
   XFILE input_file;
   afs_uint32 r;
+  int code = 0;
 
   parse_options(argc, argv);
   initialize_acfg_error_table();
@@ -297,5 +298,11 @@ int main(int argc, char **argv)
 
   if (verbose && error_count) fprintf(stderr, "*** %d errors\n", error_count);
   if (r && !quiet) fprintf(stderr, "*** FAILED: %s\n", afs_error_message(r));
-  exit(0);
+
+  if (r) {
+      code = 3;  /* failed */
+  } else if (error_count) {
+      code = 4;  /* errors */
+  }
+  return r;
 }
