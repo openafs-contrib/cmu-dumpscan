@@ -32,7 +32,10 @@ AFSLIBS = /usr/local/lib/afs
 ifeq ($(wildcard $(AFSLIBS)/*),)
 AFSLIBS = /usr/lib/afs
 ifeq ($(wildcard $(AFSLIBS)/*),)
+AFSLIBS = /usr/lib64/afs
+ifeq ($(wildcard $(AFSLIBS)/*),)
 $(error AFS static libraries not found.)
+endif
 endif
 endif
 
