@@ -59,7 +59,6 @@ char *argv0;
 static char *input_path, *gendump_path;
 static int quiet, verbose, error_count;
 
-static path_hashinfo phi;
 static dump_parser dp;
 
 static char mtpt_src[128];
@@ -115,11 +114,11 @@ static void parse_options(int argc, char **argv)
   dst_cell = argv[optind+1];
 
   if (strlen(src_cell) + 3 > sizeof(mtpt_src)) {
-    fprintf(stderr, "source cell %s is too long\n");
+    fprintf(stderr, "source cell %s is too long\n", src_cell);
     exit(1);
   }
   if (strlen(dst_cell) + 3 > sizeof(mtpt_dst)) {
-    fprintf(stderr, "destination cell %s is too long\n");
+    fprintf(stderr, "destination cell %s is too long\n", dst_cell);
     exit(1);
   }
 
@@ -177,7 +176,7 @@ filter_vnode(afs_vnode *v, void *refcon)
   link_target_size = lo64(v->size);
   if (link_target_size == 0) {
     if (!quiet) {
-      fprintf(stderr, "warning: vnode %u.%u symlink size is zero, not altering.\n",
+      fprintf(stderr, "%s: vnode %u.%u symlink size is zero, not altering.\n",
                       argv0, (unsigned)v->vnode, (unsigned)v->vuniq);
     }
     return 0;
@@ -213,7 +212,7 @@ filter_vnode(afs_vnode *v, void *refcon)
   }
   if (link_target_size <= mtpt_src_size) {
     if (debug) fprintf(stderr, "** mtpt symlink too short, not altering, %u.%u"
-                               " target %s size %u\n", (unsigned)v->vnode,
+                               " target %s size %lu\n", (unsigned)v->vnode,
                                (unsigned)v->vuniq, v->link_target,
                                link_target_size);
     return 0;
@@ -230,8 +229,8 @@ filter_vnode(afs_vnode *v, void *refcon)
 
   sprintf(new_target, "%s%s", mtpt_dst, &v->link_target[mtpt_src_size]);
   new_target[0] = target_mtpt;
-  if (debug) fprintf(stderr, "** rewrote mtpt %u.%u from %s (size %u) to "
-                             "%s (size %u)\n",
+  if (debug) fprintf(stderr, "** rewrote mtpt %u.%u from %s (size %lu) to "
+                             "%s (size %lu)\n",
                              (unsigned)v->vnode, (unsigned)v->vuniq,
                              v->link_target, link_target_size,
                              new_target, new_size);
@@ -244,10 +243,8 @@ filter_vnode(afs_vnode *v, void *refcon)
 
 static afs_uint32 vnode_cb(afs_vnode *v, XFILE *Xin, void *refcon)
 {
-  struct acl_accessList *acl;
   XFILE *Xout = (XFILE *)refcon;
   afs_uint32 r;
-  int i, n;
 
   /* Dump the vnode metadata */
   if (debug) fprintf(stderr, "** Vnode %d.%d size %u:%u field_mask %x\n", v->vnode, v->vuniq,
@@ -308,9 +305,8 @@ static afs_uint32 error_cb(afs_uint32 err, int fatal, void *refcon,
     afs_com_err_va(argv0, err, format, alist);
     va_end(alist);
   }
+  return 0;
 }
-
-static int RV = 1;
 
 /* Setup for generating a repaired dump */
 static afs_uint32 setup_output(XFILE *output_file)
