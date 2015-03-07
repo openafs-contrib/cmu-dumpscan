@@ -1,0 +1,12 @@
+*.o
+afsdump_dirlist
+afsdump_extract
+afsdump_mtpt
+afsdump_scan
+dumpscan_errs.c
+dumpscan_errs.h
+genrootafs
+libdumpscan.a
+libxfiles.a
+xf_errs.c
+xf_errs.h
