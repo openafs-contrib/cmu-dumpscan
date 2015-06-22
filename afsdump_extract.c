@@ -322,11 +322,11 @@ static afs_uint32 directory_cb(afs_vnode *v, XFILE *X, void *refcon)
   if (verbose) {
     if (use_vnum) 
       printf("d%s %3d %-11d %11d %s #%d:%d\n",
-             modestr(v->mode), v->nlinks, v->owner, v->size,
+             modestr(v->mode), v->nlinks, v->owner, lo64(v->size),
              datestr(v->server_date), v->vnode, v->vuniq);
     else
       printf("d%s %3d %-11d %11d %s %s\n",
-             modestr(v->mode), v->nlinks, v->owner, v->size,
+             modestr(v->mode), v->nlinks, v->owner, lo64(v->size),
              datestr(v->server_date), vnodepath);
   }
   else if (!quiet && !use_vnum)
@@ -383,7 +383,7 @@ static afs_uint32 file_cb(afs_vnode *v, XFILE *X, void *refcon)
   /* Print it out */
   if (verbose) {
     printf("-%s %3d %-11d %11d %s %s\n",
-           modestr(v->mode), v->nlinks, v->owner, v->size,
+           modestr(v->mode), v->nlinks, v->owner, lo64(v->size),
            datestr(v->server_date), vnodepath);
   } else if (!quiet) {
     printf("%s\n", vnodepath);
@@ -454,7 +454,7 @@ static afs_uint32 symlink_cb(afs_vnode *v, XFILE *X, void *refcon)
   /* Print it out */
   if (verbose)
     printf("l%s %3d %-11d %11d %s %s -> %s\n",
-           modestr(v->mode), v->nlinks, v->owner, v->size,
+           modestr(v->mode), v->nlinks, v->owner, lo64(v->size),
            datestr(v->server_date), vnodepath, linktarget);
   else if (!quiet)
     printf("%s\n", vnodepath);

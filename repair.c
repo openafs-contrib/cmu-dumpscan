@@ -220,7 +220,8 @@ afs_uint32 repair_vnode_cb(afs_vnode *v, XFILE *X, void *refcon)
   mk64(zero64, 0, 0);
 
   if ((v->vnode & 1) && !field_mask) {
-    if (RV) fprintf(stderr, ">>> VNODE %d is directory but has no fields?\n");
+    if (RV) fprintf(stderr, ">>> VNODE %d is directory but has no fields?\n",
+                    v->vnode);
     v->type = vDirectory;
     v->field_mask |= F_VNODE_TYPE;
     field_mask = F_VNODE_TYPE; /* Messy! */
@@ -285,7 +286,8 @@ afs_uint32 repair_vnode_cb(afs_vnode *v, XFILE *X, void *refcon)
     v->field_mask |= F_VNODE_SDATE;
   }
   if (field_mask && !(field_mask & F_VNODE_SIZE)) {
-    if (RV) fprintf(stderr, ">>> VNODE %d has no data size (using 0)\n");
+    if (RV) fprintf(stderr, ">>> VNODE %d has no data size (using 0)\n",
+                    v->vnode);
     mk64(v->size, 0, 0);
     v->field_mask |= F_VNODE_SIZE;
   }
@@ -298,7 +300,8 @@ afs_uint32 repair_vnode_cb(afs_vnode *v, XFILE *X, void *refcon)
   if (field_mask && v->type == vDirectory && !(field_mask & F_VNODE_ACL)) {
     struct acl_accessList *acl = (struct acl_accessList *)v->acl;
     if (RV) {
-      fprintf(stderr, ">>> VNODE %d is directory but has no ACL\n");
+      fprintf(stderr, ">>> VNODE %d is directory but has no ACL\n",
+              v->vnode);
       fprintf(stderr, ">>> Will generate default ACL\n");
     }
     memset(v->acl, 0, SIZEOF_LARGEDISKVNODE - SIZEOF_SMALLDISKVNODE);
@@ -330,7 +333,8 @@ afs_uint32 repair_vnode_cb(afs_vnode *v, XFILE *X, void *refcon)
     u_int64 tmp64;
 
     if (RV) {
-      fprintf(stderr, ">>> VNODE %d is directory but has no contents\n");
+      fprintf(stderr, ">>> VNODE %d is directory but has no contents\n",
+              v->vnode);
       fprintf(stderr, ">>> Will generate deafult directory entries\n");
     }
     memset(&page, 0, sizeof(page));
