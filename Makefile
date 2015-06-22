@@ -28,10 +28,19 @@ AR         = ar
 COMPILE_ET = compile_et
 RANLIB     = ranlib
 
+AFSLIBS = /usr/local/lib/afs
+ifeq ($(wildcard $(AFSLIBS)/*),)
+AFSLIBS = /usr/lib/afs
+ifeq ($(wildcard $(AFSLIBS)/*),)
+$(error AFS static libraries not found.)
+endif
+endif
+
 # On Linux:
 ifeq ($(shell uname),Linux)
 R=-Wl,-rpath,
 XLIBS=-lresolv
+XCFLAGS=-W -Wall -Wno-parentheses -Wno-unused-parameter -Wno-implicit-function-declaration
 endif
 
 # On Solaris:
@@ -43,13 +52,13 @@ endif
 
 DEBUG      = -g
 INCLUDES   = -I/usr/local/include
-CFLAGS     = $(DEBUG) $(INCLUDES) -DNATIVE_INT64='long long'
-LDFLAGS    = -L. -L/usr/local/lib $(R)/usr/local/lib -L/usr/local/lib/afs $(XLDFLAGS)
+CFLAGS     = $(DEBUG) $(XCFLAGS) $(INCLUDES) -DNATIVE_INT64='long long'
+LDFLAGS    = -L. -L/usr/local/lib $(R)/usr/local/lib -L$(AFSLIBS) $(XLDFLAGS)
 
 LIBS                 = -ldumpscan -lxfiles \
                        -lauth -laudit -lvolser -lvldb -lubik -lrxkad \
-                       /usr/local/lib/afs/libsys.a -lrx -llwp \
-                       -lcom_err /usr/local/lib/afs/util.a $(XLIBS)
+                       $(AFSLIBS)/libsys.a -lrx -llwp \
+                       -lcom_err -lafscom_err $(AFSLIBS)/util.a $(XLIBS)
 OBJS_afsdump_scan    = afsdump_scan.o repair.o
 OBJS_afsdump_xsed    = afsdump_xsed.o repair.o
 OBJS_libxfiles.a     = xfiles.o xfopen.o xf_errs.o xf_printf.o int64.o \
