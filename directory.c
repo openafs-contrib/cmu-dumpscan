@@ -74,17 +74,6 @@ static int namehash(char *name, int buckets, int seed)
   return tval ? hval < 0 ? buckets - tval : tval : 0;
 }
 
-static void fixup(char *name, int l)
-{
-  name += 16;
-  l -= 15;
-
-  while (l-- > 0) {
-    name[0] = name[4];
-    name++;
-  }
-}
-
 afs_uint32 parse_directory(XFILE *X, dump_parser *p, afs_vnode *v,
                         afs_uint32 size, int toeof)
 {
@@ -130,7 +119,6 @@ afs_uint32 parse_directory(XFILE *X, dump_parser *p, afs_vnode *v,
                         pgno, i);
         break;
       }
-/*    fixup(page.entry[i].name, l); */
       if (pgno) de.slot = i - 1 + (pgno - 1) * (EPP - 1) + (EPP - DPHE);
       else de.slot = i - DPHE;
       de.name  = page.entry[i].name;
