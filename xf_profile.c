@@ -129,7 +129,6 @@ afs_uint32 xf_PROFILE_do_open(XFILE *X, int flag, char *xname,
                               XFILE *profile, int free_profile)
 {
   PFILE *PF;
-  afs_uint32 err;
 
   PF = malloc(sizeof(*PF));
   if (!PF) return ENOMEM;
@@ -148,7 +147,6 @@ afs_uint32 xf_PROFILE_do_open(XFILE *X, int flag, char *xname,
   X->do_close = xf_PROFILE_do_close;
   X->is_writable = PF->content->is_writable;
   if (PF->content->is_seekable) {
-    X->is_seekable;
     X->do_seek  = xf_PROFILE_do_seek;
     X->do_skip  = xf_PROFILE_do_skip;
   }

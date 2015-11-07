@@ -50,7 +50,6 @@ char *argv0;
 static char *input_path;
 static int quiet, verbose, error_count;
 
-static path_hashinfo phi;
 static dump_parser dp;
 
 
@@ -111,6 +110,7 @@ static afs_uint32 my_error_cb(afs_uint32 code, int fatal, void *ref, char *msg, 
     afs_com_err_va(argv0, code, msg, alist);
     va_end(alist);
   }
+  return 0;
 }
 
 

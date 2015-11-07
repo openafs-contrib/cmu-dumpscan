@@ -186,7 +186,6 @@ static afs_uint32 parse_dumpend(XFILE *X, unsigned char *tag, tagged_field *fiel
                              void *g_refcon, void *l_refcon)
 {
   dump_parser *p = (dump_parser *)g_refcon;
-  afs_uint32 r;
 
   if (value != DUMPENDMAGIC) {
     if (p->cb_error)

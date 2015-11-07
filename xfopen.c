@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include "xfiles.h"
 #include "xf_errs.h"
@@ -62,6 +63,7 @@ afs_uint32 xfregister(char *name, afs_uint32 (*do_on)(XFILE *, int, char *))
   x->name = name;
   x->do_on = do_on;
   xftypes = x;
+  return 0;
 }
 
 

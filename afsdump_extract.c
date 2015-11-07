@@ -53,7 +53,7 @@ extern char *optarg;
 
 char *argv0;
 static char **file_names;
-static afs_int32 *file_vnums;
+static afs_uint32 *file_vnums;
 static int name_count, vnum_count;
 
 static char *input_path, *target;
@@ -260,7 +260,7 @@ static int usevnode(XFILE *X, afs_uint32 vnum, char *vnodepath)
 static int copyfile(XFILE *in, XFILE *out, u_int64 size)
 {
   static char buf[COPYBUFSIZE];
-  int nr, nw, r;
+  int nr, r;
   u_int64 zero64, bufsize64, tmp64;
   mk64(zero64, 0, 0);
   mk64(bufsize64, 0, COPYBUFSIZE);
@@ -287,6 +287,7 @@ static afs_uint32 my_error_cb(afs_uint32 code, int fatal, void *ref, char *msg, 
     afs_com_err_va(argv0, code, msg, alist);
     va_end(alist);
   }
+  return 0;
 }
 
 
@@ -473,8 +474,6 @@ static afs_uint32 symlink_cb(afs_vnode *v, XFILE *X, void *refcon)
 
 static afs_uint32 lose_cb(afs_vnode *v, XFILE *F, void *refcon)
 {
-  int r;
-
   if (!dirs_done) {
     dirs_done = 1;
     if (verbose) printf("* Extracting files...\n");

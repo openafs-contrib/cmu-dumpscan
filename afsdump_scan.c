@@ -182,6 +182,7 @@ static afs_uint32 my_error_cb(afs_uint32 code, int fatal, void *ref, char *msg, 
     afs_com_err_va(argv0, code, msg, alist);
     va_end(alist);
   }
+  return 0;
 }
 
 
@@ -304,5 +305,5 @@ int main(int argc, char **argv)
   } else if (error_count) {
       code = 4;  /* errors */
   }
-  return r;
+  return code;
 }

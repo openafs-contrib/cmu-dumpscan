@@ -78,8 +78,8 @@ afs_uint32 parse_directory(XFILE *X, dump_parser *p, afs_vnode *v,
                         afs_uint32 size, int toeof)
 {
   afs_dir_entry de;
-  int pgno, i, j, l, n;
-  afs_uint32 r;
+  int pgno, i, l, n;
+  int r;
   u_int64 where;
 
   if (p->print_flags & DSPRINT_DIR) {
@@ -138,9 +138,8 @@ afs_uint32 parse_directory(XFILE *X, dump_parser *p, afs_vnode *v,
 
 afs_uint32 ParseDirectory(XFILE *X, dump_parser *p, afs_uint32 size, int toeof)
 {
-  afs_uint32 r;
-
-  r = parse_directory(X, p, 0, size, toeof);
+  parse_directory(X, p, 0, size, toeof);
+  return 0;
 }
 
 
@@ -237,8 +236,7 @@ static int allocpage(struct dir_state *ds, int reserve)
 
 afs_uint32 Dir_Init(struct dir_state **dsp)
 {
-  afs_uint32 vnode, uniq, r;
-  int i;
+  afs_uint32 r;
 
   *dsp = malloc(sizeof(struct dir_state));
   if (!*dsp) return ENOMEM;

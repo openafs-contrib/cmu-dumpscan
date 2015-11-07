@@ -59,9 +59,11 @@ static afs_uint32 hdr_checksum(char *buf, int size)
  */
 afs_uint32 ParseStageHdr(XFILE *X, unsigned char *tag, backup_system_header *hdr)
 {
-    char buf[128], *x; /* must be long enough for any string in header */
-    afs_uint32 i32, j32, hdrlen, dumplen, r;
+    char buf[128]; /* must be long enough for any string in header */
+    unsigned char *x;
+    afs_uint32 i32, j32, hdrlen, dumplen;
     u_int64 where;
+    int r;
 
 #define notours() do {                     \
       if (X->is_seekable) {                \
@@ -86,7 +88,7 @@ afs_uint32 ParseStageHdr(XFILE *X, unsigned char *tag, backup_system_header *hdr
       r = xfread(X, buf, (l));             \
       checkr(r);                           \
       buf[(l)-1] = 0;                      \
-      (x) = strdup(buf);                   \
+      x = (unsigned char*)strdup(buf);     \
       if (!(x)) return ENOMEM;             \
     } while (0)
 
@@ -101,7 +103,7 @@ afs_uint32 ParseStageHdr(XFILE *X, unsigned char *tag, backup_system_header *hdr
     if (tag) {
       if (*tag != 'S') return DSERR_MAGIC;
       buf[0] = *tag;
-      r = xfread(X, buf + 1, 3);
+      r = (int)xfread(X, buf + 1, 3);
       checkr(r);
       memcpy(&i32, buf, 4);
       hdr->magic = ntohl(i32);
@@ -133,7 +135,7 @@ afs_uint32 ParseStageHdr(XFILE *X, unsigned char *tag, backup_system_header *hdr
         set64(hdr->dumplen, dumplen);
 
         getstr(hdr->server, DUMPHDR_MAXSYSNAME);
-        hdr->part = strdup("");
+        hdr->part = (unsigned char*)strdup("");
         if (!hdr->part) return ENOMEM;
         getstr(hdr->volname, DUMPHDR_MAXVOLNAME);
         getstr(x, 2); free(x);
@@ -156,7 +158,7 @@ afs_uint32 ParseStageHdr(XFILE *X, unsigned char *tag, backup_system_header *hdr
         mk64(hdr->dumplen, j32, dumplen);
 
         getstr(hdr->server, DUMPHDR_MAXSYSNAME);
-        hdr->part = strdup("");
+        hdr->part = (unsigned char*)strdup("");
         if (!hdr->part) return ENOMEM;
         getstr(hdr->volname, DUMPHDR_MAXVOLNAME);
         break;
@@ -183,7 +185,7 @@ afs_uint32 ParseStageV20Hdr(XFILE *X, unsigned char *tag, backup_system_header *
   char buf[V20_HDRLEN];
   struct v20_header *bckhdr = (struct v20_header *)buf;
   u_int64 where;
-  afs_uint32 r;
+  int r;
 
   if (r = xftell(X, &where)) return r;
   if (hdr) memset(hdr, 0, sizeof(*hdr));
@@ -233,9 +235,9 @@ afs_uint32 ParseStageV20Hdr(XFILE *X, unsigned char *tag, backup_system_header *
       if (hdr->volname) free(hdr->volname);
       return ENOMEM;
     }
-    strcpy(hdr->server,  bckhdr->c_host);
-    strcpy(hdr->part,    bckhdr->c_disk);
-    strcpy(hdr->volname, bckhdr->c_name);
+    strcpy((char*)hdr->server,  bckhdr->c_host);
+    strcpy((char*)hdr->part,    bckhdr->c_disk);
+    strcpy((char*)hdr->volname, bckhdr->c_name);
   }
 
   if (tag) return ReadByte(X, tag);
@@ -263,9 +265,9 @@ afs_uint32 DumpStageV20Hdr(XFILE *OX, backup_system_header *hdr)
   bckhdr->c_magic    = htonl(V20_MAGIC);
   bckhdr->c_flags    = htonl(hdr->flags);
 
-  strcpy(bckhdr->c_host, hdr->server);
-  strcpy(bckhdr->c_disk, hdr->part);
-  strcpy(bckhdr->c_name, hdr->volname);
+  strcpy(bckhdr->c_host, (char*)hdr->server);
+  strcpy(bckhdr->c_disk, (char*)hdr->part);
+  strcpy(bckhdr->c_name, (char*)hdr->volname);
 
   /* Now, compute the checksum */
   checksum = hdr_checksum(buf, V20_HDRLEN);

@@ -45,8 +45,8 @@ afs_uint32 try_backuphdr(XFILE *X, char *tag, tagged_field *field,
 
   /* Which header should we try (if any)? */
   switch (*tag) {
-    case V20_VERSMIN: r = ParseStageV20Hdr(X, tag, &bh); break;
-    case 'S':         r = ParseStageHdr(X, tag, &bh); break;
+    case V20_VERSMIN: r = ParseStageV20Hdr(X, (unsigned char*)tag, &bh); break;
+    case 'S':         r = ParseStageHdr(X, (unsigned char*)tag, &bh); break;
     default: return DSERR_MAGIC;
   }
   if (r) return r;

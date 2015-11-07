@@ -50,7 +50,7 @@ int repair_verbose;
 /* Try to dump a dump header.  Generate missing fields, if neccessary */
 afs_uint32 repair_dumphdr_cb(afs_dump_header *hdr, XFILE *X, void *refcon)
 {
-  afs_uint32 r, field_mask = hdr->field_mask;
+  afs_uint32 field_mask = hdr->field_mask;
   char volname[22];
 
   if (!(field_mask & F_DUMPHDR_VOLID)) {
@@ -65,7 +65,7 @@ afs_uint32 repair_dumphdr_cb(afs_dump_header *hdr, XFILE *X, void *refcon)
     sprintf(volname, "RESTORED.%d", hdr->volid);
     hdr->volname = (unsigned char *)malloc(strlen(volname) + 1);
     if (!hdr->volname) return ENOMEM;
-    strcpy(hdr->volname, volname);
+    strcpy((char*)hdr->volname, volname);
     hdr->field_mask |= F_DUMPHDR_VOLNAME;
   }
   if (!(field_mask & F_DUMPHDR_FROM)) {
@@ -87,7 +87,7 @@ afs_uint32 repair_dumphdr_cb(afs_dump_header *hdr, XFILE *X, void *refcon)
 /* Try to dump a volume header.  Generate missing fields, if necessary */
 afs_uint32 repair_volhdr_cb(afs_vol_header *hdr, XFILE *X, void *refcon)
 {
-  afs_uint32 r, field_mask = hdr->field_mask;
+  afs_uint32 field_mask = hdr->field_mask;
   char volname[22];
 
   if (!(field_mask & F_VOLHDR_VOLID)) {
@@ -111,7 +111,7 @@ afs_uint32 repair_volhdr_cb(afs_vol_header *hdr, XFILE *X, void *refcon)
     sprintf(volname, "RESTORED.%d", hdr->volid);
     hdr->volname = (unsigned char *)malloc(strlen(volname) + 1);
     if (!hdr->volname) return ENOMEM;
-    strcpy(hdr->volname, volname);
+    strcpy((char *)hdr->volname, volname);
     hdr->field_mask |= F_VOLHDR_VOLNAME;
   }
   if (!(field_mask & F_VOLHDR_INSERV)) {
