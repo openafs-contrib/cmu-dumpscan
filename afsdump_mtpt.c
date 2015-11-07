@@ -42,6 +42,7 @@
 #include <afs/vlserver.h>
 
 #include "dumpscan.h"
+#include "dumpscan_errs.h"
 
 #ifndef debug
 #define debug 0
@@ -63,8 +64,8 @@ static dump_parser dp;
 
 static char mtpt_src[128];
 static char mtpt_dst[128];
-static int mtpt_src_size;
-static int mtpt_dst_size;
+static size_t mtpt_src_size;
+static size_t mtpt_dst_size;
 
 /* Print a usage message and exit */
 static void usage(int status, char *msg)
@@ -156,19 +157,40 @@ filter_vnode(afs_vnode *v, void *refcon)
 {
   int mode_mtpt = 0;
   char target_mtpt = 0;
-  int new_size;
+  size_t new_size;
   char *new_target;
+  size_t link_target_size;
 
   if (v->type != vSymlink || !(v->field_mask & F_VNODE_LINK_TARGET)) {
     return 0;
   }
+
+  if (hi64(v->size) != 0) {
+    /* Symlinks longer than 2^32 are considered bogus to avoid overflow errors. */
+    if (!quiet) {
+      fprintf(stderr, "%s: vnode %u.%u symlink size exceeds 32 bits.\n",
+                      argv0, (unsigned)v->vnode, (unsigned)v->vuniq);
+    }
+    return DSERR_BOGUS;
+  }
+
+  link_target_size = lo64(v->size);
+  if (link_target_size == 0) {
+    if (!quiet) {
+      fprintf(stderr, "warning: vnode %u.%u symlink size is zero, not altering.\n",
+                      argv0, (unsigned)v->vnode, (unsigned)v->vuniq);
+    }
+    return 0;
+  }
+
   if (v->link_target[0] == '#') {
     target_mtpt = '#';
   }
   if (v->link_target[0] == '%') {
     target_mtpt = '%';
   }
-  if (target_mtpt && v->link_target[v->size-1] != '.') {
+
+  if (target_mtpt && v->link_target[link_target_size-1] != '.') {
     fprintf(stderr, "warning: vnode %u.%u looks like a weird mountpoint"
                     " (symlink target %s)\n",
                     (unsigned)v->vnode, (unsigned)v->vuniq, v->link_target);
@@ -189,11 +211,11 @@ filter_vnode(afs_vnode *v, void *refcon)
                                v->link_target);
     return 0;
   }
-  if (v->size <= mtpt_src_size) {
+  if (link_target_size <= mtpt_src_size) {
     if (debug) fprintf(stderr, "** mtpt symlink too short, not altering, %u.%u"
                                " target %s size %u\n", (unsigned)v->vnode,
                                (unsigned)v->vuniq, v->link_target,
-                               (unsigned)v->size);
+                               link_target_size);
     return 0;
   }
   if (strncmp(&v->link_target[1], &mtpt_src[1], mtpt_src_size-1) != 0) {
@@ -202,7 +224,7 @@ filter_vnode(afs_vnode *v, void *refcon)
                                (unsigned)v->vuniq, v->link_target);
     return 0;
   }
-  new_size = v->size + mtpt_dst_size - mtpt_src_size;
+  new_size = link_target_size + mtpt_dst_size - mtpt_src_size;
   new_target = malloc(new_size+1);
   if (!new_target) return ENOMEM;
 
@@ -211,11 +233,11 @@ filter_vnode(afs_vnode *v, void *refcon)
   if (debug) fprintf(stderr, "** rewrote mtpt %u.%u from %s (size %u) to "
                              "%s (size %u)\n",
                              (unsigned)v->vnode, (unsigned)v->vuniq,
-                             v->link_target, (unsigned)v->size,
-                             new_target, (unsigned)new_size);
+                             v->link_target, link_target_size,
+                             new_target, new_size);
   free(v->link_target);
   v->link_target = new_target;
-  v->size = new_size;
+  set64(v->size, new_size);
 
   return 0;
 }
@@ -228,8 +250,8 @@ static afs_uint32 vnode_cb(afs_vnode *v, XFILE *Xin, void *refcon)
   int i, n;
 
   /* Dump the vnode metadata */
-  if (debug) fprintf(stderr, "** Vnode %d.%d size %d field_mask %x\n", v->vnode, v->vuniq,
-                     (int)v->size, (unsigned)v->field_mask);
+  if (debug) fprintf(stderr, "** Vnode %d.%d size %u:%u field_mask %x\n", v->vnode, v->vuniq,
+                     hi64(v->size), lo64(v->size), (unsigned)v->field_mask);
 
   r = filter_vnode(v, refcon);
   if (r) return r;
@@ -240,8 +262,8 @@ static afs_uint32 vnode_cb(afs_vnode *v, XFILE *Xin, void *refcon)
 
   /* And the symlink data, if appropriate */
   if (v->field_mask & F_VNODE_LINK_TARGET) {
-    if (debug) fprintf(stderr, "   writing symlink target '%s' (%d bytes)\n",
-                       v->link_target, v->size);
+    if (debug) fprintf(stderr, "   writing symlink target '%s' (%u:%u bytes)\n",
+                       v->link_target, hi64(v->size), lo64(v->size));
     r = DumpVNodeData(Xout, v->link_target, &v->size);
     if (r && debug) fprintf(stderr, "   error %d writing link target\n", r);
     if (r) return r;
@@ -260,16 +282,16 @@ static afs_uint32 data_cb(afs_vnode *v, XFILE *Xin, void *refcon)
   r = vnode_cb(v, Xin, refcon);
   if (r) return r;
 
-  if (debug) fprintf(stderr, "** Vnode %d.%d size %d field_mask %x\n", (int)v->vnode, (int)v->vuniq,
-                     (int)v->size, (unsigned)v->field_mask);
+  if (debug) fprintf(stderr, "** Vnode %d.%d size %u:%u field_mask %x\n", (int)v->vnode, (int)v->vuniq,
+                     hi64(v->size), lo64(v->size), (unsigned)v->field_mask);
 
   if (v->field_mask & F_VNODE_SIZE) {
-    if (debug) fprintf(stderr, "   copying %d bytes of data\n", v->size);
+    if (debug) fprintf(stderr, "   copying %u:%u bytes of data\n", hi64(v->size), lo64(v->size));
     r = CopyVNodeData(Xout, Xin, &v->size);
     if (r && debug) fprintf(stderr, "   error %d copying vnode data\n", r);
     if (r) return r;
   } else {
-    if (debug) fprintf(stderr, "   no data for vnode\n", v->size);
+    if (debug) fprintf(stderr, "   no data for vnode\n");
   }
 
   v->field_mask = F_VNODE_PARTIAL; /* don't re-dump fields we already have */
@@ -281,9 +303,11 @@ static afs_uint32 error_cb(afs_uint32 err, int fatal, void *refcon,
                            char *format, ...)
 {
   va_list alist;
-  va_start(alist, format);
-  afs_com_err_va(argv0, err, format, alist);
-  va_end(alist);
+  if (!quiet) {
+    va_start(alist, format);
+    afs_com_err_va(argv0, err, format, alist);
+    va_end(alist);
+  }
 }
 
 static int RV = 1;
