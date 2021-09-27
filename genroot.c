@@ -96,8 +96,8 @@ static void parse_options(int argc, char **argv)
   /* Parse the options */
   while ((c = getopt(argc, argv, "ar:thdo:")) != EOF) {
     switch (c) {
-      default:  usage(1, "Invalid option!");
-      case 'h': usage(0, 0);
+      default:  usage(1, "Invalid option!");              exit(1);
+      case 'h': usage(0, 0);                              exit(0);
       case 'a': doaliases    = 1;                         continue;
       case 't': dorft        = 1;                         continue;
       case 'd': debug        = 1;                         continue;

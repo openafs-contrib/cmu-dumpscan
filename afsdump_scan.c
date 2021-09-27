@@ -159,7 +159,7 @@ static void parse_options(int argc, char **argv)
       case 'g': gendump_path = optarg;                    continue;
       case 'q': quiet        = 1;                         continue;
       case 'v': verbose      = 1;                         continue;
-      case 'h': usage(0, 0);
+      case 'h': usage(0, 0);                              exit(0);
       default:  usage(1, "Invalid option!");
     }
   }
