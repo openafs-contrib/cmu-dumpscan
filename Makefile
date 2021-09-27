@@ -60,7 +60,7 @@ LDFLAGS    = -L. -L/usr/local/lib $(R)/usr/local/lib -L$(AFSLIBS) $(XLDFLAGS)
 
 LIBS                 = -ldumpscan -lxfiles \
                        -lauth -laudit -lvolser -lvldb -lubik -lrxkad \
-                       $(AFSLIBS)/libsys.a -lrx -llwp \
+                       $(AFSLIBS)/libsys.a -lrx -llwp -lopr -lrokenafs -lafshcrypto \
                        -lcom_err -lafscom_err $(AFSLIBS)/util.a $(XLIBS)
 OBJS_afsdump_scan    = afsdump_scan.o repair.o
 OBJS_afsdump_xsed    = afsdump_xsed.o repair.o
